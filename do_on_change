@@ -1,0 +1,31 @@
+#!/bin/bash
+trap ctrl_c INT
+
+function ctrl_c() {
+    trap - INT
+    printf "\n** Stopped compilation **\n    tap ctrl-c to exit watchdog\n "
+    ## allows double ctrl-c to exit
+    for ((i=10; i>=0; i--)); do
+        sleep 0.5
+        printf "\r%0.2d" "${i}"
+    done
+    printf "\r"
+    trap ctrl_c INT
+}
+
+CMD=""
+while [ "_$1" != "_--" ];
+do
+    CMD="${CMD} $1"
+    shift
+done
+# skip --
+shift
+
+WATCHFILES=( $@ )
+
+echo "Executing \"${CMD}\" if \"${WATCHFILES[*]}\" is modified"
+while true; 
+do 
+    inotifywait -e modify ${WATCHFILES[*]} && ${CMD}
+done
